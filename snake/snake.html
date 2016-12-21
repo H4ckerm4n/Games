@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Snake</title>
+</head>
+<script src="../libs/jQuery.js"></script>
+<style>
+    canvas{
+        padding: 0;
+        margin: auto;
+        display: block;
+        background-color: black;
+    }
+</style>
+<body>
+<script>
+    window.onload = function() {
+        var canvas = document.createElement("canvas");
+        var ctx = canvas.getContext("2d");
+        var cellSize = 20,
+            speed = 20,
+            cellColor = "white";
+        var snakeArray = new Array(5);
+        var xCoord = speed,
+                yCoord = 0;
+
+        var gameSpeed = 60;
+        canvas.width = window.innerWidth-50;
+        canvas.height = window.innerHeight -10;
+
+        if (canvas.width % 20 != 0){var temp = canvas.width % 20;canvas.width -= temp;}
+        if (canvas.height % 20 != 0){var temp = canvas.height % 20;canvas.height -= temp;}
+
+        document.body.appendChild(canvas);
+
+        //Erschafft eine neue celle
+        function Cell(x, y, color){
+            this.x = x;
+            this.y = y;
+            this.cellSize = cellSize;
+            this.color = color || cellColor;
+        }
+        //Zeichnet Zelle
+        Cell.prototype.draw = function(){
+            ctx.fillStyle = this.color;
+            ctx.fillRect(this.x, this.y, this.cellSize, this.cellSize);
+            ctx.strokeStyle = "black";
+            ctx.strokeRect(this.x, this.y, this.cellSize,this.cellSize);
+        };
+        // Canvas übermalen
+        function clearField(){
+            ctx.fillStyle = "black";
+            ctx.fillRect(0,0,canvas.width,canvas.height);
+            ctx.strokeStyle = "red";
+
+        }
+        //Food
+        function randomFood(){
+            var x = parseInt(Math.random()* canvas.width);
+            var y = parseInt(Math.random()* canvas.height);
+
+            if (x % 20 != 0){
+                var temp = x % 20;
+                x -= temp;
+            }
+            if (y % 20 != 0){
+                var temp = y % 20;
+                y -= temp;
+            }
+
+
+            food = new Cell(x,y,"hsl("+parseInt(Math.random()*360,11)+",50%,50%)");
+            return food;
+        }
+        //Snake erstellen
+        function createSnake(x, y)
+        {
+            var length = snakeArray.length;
+            snakeArray[length-1] = new Cell(x, y, "white");
+            for (var i = length-2; i >= 0; i--)
+            {
+                snakeArray[i] = new Cell(snakeArray[i+1].x + speed, snakeArray[i+1].y, "white");
+            }
+        }
+        //Future Snake
+        function tempArray(x,y){
+            var tempArray = [];
+            var nextX = snakeArray[0].x + x;
+            var nextY = snakeArray[0].y + y;
+            tempArray.push(new Cell(nextX, nextY));
+            for (var i = 1; i < snakeArray.length; i++){
+                tempArray.push(new Cell(snakeArray[i-1].x, snakeArray[i-1].y));
+            }
+            return tempArray;
+        }
+
+
+
+        var food = randomFood();
+        createSnake(300,300);
+
+        console.log(snakeArray);
+        var score = 0;
+        var game = setInterval(function(){
+            var length = snakeArray.length;
+            clearField();
+
+
+            //Checkt Kollision mit Canvas Rahmen --> Unterbricht Intverval
+            if (snakeArray[0].x > canvas.width - cellSize){clearInterval(game);alert("GAME OVER\nYour Score: " + score);}
+            if (snakeArray[0].x < 0){clearInterval(game);alert("GAME OVER\nYour Score: " + score);}
+            if (snakeArray[0].y < 0){clearInterval(game);alert("GAME OVER\nYour Score: " + score);}
+            if (snakeArray[0].y > canvas.height -cellSize){clearInterval(game);alert("GAME OVER\nYour Score: " + score);}
+
+            //Check Kollision mit Snake
+            for (var z = 4; z < snakeArray.length-1; z++){
+                if(snakeArray[0].x == snakeArray[z].x && snakeArray[0].y == snakeArray[z].y){
+                    clearInterval(game);alert("GAME OVER\nYour Score: " + score);
+                }
+            }
+            if (snakeArray[0].x == food.x && snakeArray[0].y == food.y){
+                snakeArray.push(new Cell(snakeArray[0].x , snakeArray[0].y));
+                food = randomFood();
+                score += 1;
+                gameSpeed -=1;
+            }
+
+            //Zeichnet food Zelle
+            food.draw();
+            //Zeichnet Snake
+            for (var i = 0; i < snakeArray.length; i++){
+                snakeArray[i].draw();
+            }
+            //Erstell future Snake
+            var temp = tempArray(xCoord, yCoord);
+            //Swap
+            snakeArray = temp;
+            //Collision mit food, inkrement snakearray
+
+          },gameSpeed);
+
+        //Controls
+        $(document).keydown(function(e) {
+            switch(e.which) {
+                case 37: // left
+                    if (xCoord == speed && yCoord == 0){
+                        xCoord = speed;
+                        yCoord = 0;
+                        break;
+                    }
+                    xCoord = -speed;
+                    yCoord = 0;
+                    break;
+                case 38: // up
+                    if (xCoord == 0 && yCoord == speed){
+                        xCoord = 0;
+                        yCoord = speed;
+                        break;
+                    }
+                    xCoord = 0;
+                    yCoord = -speed;
+                    break;
+                case 39: // right
+                    if (xCoord == -speed && yCoord == 0){
+                        xCoord = -speed;
+                        yCoord = 0;
+                        break;
+                    }
+                    xCoord = speed;
+                    yCoord = 0;
+                    break;
+                case 40: // down
+                    if (xCoord == 0 && yCoord == -speed){
+                        xCoord = 0;
+                        yCoord = -speed;
+                        break;
+                    }
+                    xCoord = 0;
+                    yCoord = speed;
+                    break;
+                default: return; // exit this handler for other keys
+            }
+            e.preventDefault(); // prevent the default action (scroll / move caret)
+        });
+    }
+
+</script>
+
+</body>
+</html>
